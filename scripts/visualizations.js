@@ -719,6 +719,7 @@ const BasicNetworkViz = {
     layers: [3, 4, 4, 2],
     neurons: [],
     hoveredNeuron: null,
+    isTouching: false,
     
     init(canvasId) {
         this.canvas = document.getElementById(canvasId);
@@ -726,28 +727,41 @@ const BasicNetworkViz = {
         
         this.ctx = this.canvas.getContext('2d');
         this.resize();
+        this.buildNeurons();
         this.draw();
         
         window.addEventListener('resize', () => {
             this.resize();
+            this.buildNeurons();
             this.draw();
         });
         
+        // Mouse events
         this.canvas.addEventListener('mousemove', (e) => {
+            if (this.isTouching) return; // Ignore mouse during touch
             const rect = this.canvas.getBoundingClientRect();
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
             this.handleInteraction(x, y);
         });
         
-        // Touch support for mobile
+        this.canvas.addEventListener('mouseleave', () => {
+            if (!this.isTouching) {
+                this.hoveredNeuron = null;
+                this.draw();
+            }
+        });
+        
+        // Touch support for mobile - with better handling
         this.canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            this.isTouching = true;
             const rect = this.canvas.getBoundingClientRect();
             const touch = e.touches[0];
             const x = touch.clientX - rect.left;
             const y = touch.clientY - rect.top;
             this.handleInteraction(x, y);
-        });
+        }, { passive: false });
         
         this.canvas.addEventListener('touchmove', (e) => {
             e.preventDefault();
@@ -757,18 +771,58 @@ const BasicNetworkViz = {
             const y = touch.clientY - rect.top;
             this.handleInteraction(x, y);
         }, { passive: false });
+        
+        this.canvas.addEventListener('touchend', (e) => {
+            // Keep the highlight visible for a moment after touch ends
+            setTimeout(() => {
+                this.isTouching = false;
+                this.hoveredNeuron = null;
+                this.draw();
+            }, 1500);
+        });
+        
+        this.canvas.addEventListener('touchcancel', () => {
+            this.isTouching = false;
+            this.hoveredNeuron = null;
+            this.draw();
+        });
     },
     
     handleInteraction(x, y) {
+        // Scale coordinates for device pixel ratio
+        const dpr = window.devicePixelRatio || 1;
+        const scaleX = this.canvas.width / this.canvas.offsetWidth;
+        const scaleY = this.canvas.height / this.canvas.offsetHeight;
+        const scaledX = x * scaleX;
+        const scaledY = y * scaleY;
+        
         this.hoveredNeuron = null;
+        // Larger touch target for mobile (30px instead of 20px)
+        const touchRadius = this.isTouching ? 35 : 25;
+        
         for (const neuron of this.neurons) {
-            const dist = Math.sqrt((x - neuron.x) ** 2 + (y - neuron.y) ** 2);
-            if (dist < 20) {
+            const dist = Math.sqrt((scaledX - neuron.x) ** 2 + (scaledY - neuron.y) ** 2);
+            if (dist < touchRadius) {
                 this.hoveredNeuron = neuron;
                 break;
             }
         }
         this.draw();
+    },
+    
+    buildNeurons() {
+        this.neurons = [];
+        const layerSpacing = this.canvas.width / (this.layers.length + 1);
+        
+        for (let l = 0; l < this.layers.length; l++) {
+            const x = layerSpacing * (l + 1);
+            const spacing = this.canvas.height / (this.layers[l] + 1);
+            
+            for (let i = 0; i < this.layers[l]; i++) {
+                const y = spacing * (i + 1);
+                this.neurons.push({ x, y, layer: l, index: i });
+            }
+        }
     },
     
     resize() {
@@ -780,7 +834,6 @@ const BasicNetworkViz = {
     draw() {
         const ctx = this.ctx;
         ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        this.neurons = [];
         
         const layerSpacing = this.canvas.width / (this.layers.length + 1);
         const colors = ['#4ecdc4', '#5b7cfa', '#c44569', '#d4a853'];
@@ -805,44 +858,14 @@ const BasicNetworkViz = {
             }
         }
         
-        // Draw neurons
-        for (let l = 0; l < this.layers.length; l++) {
-            const x = layerSpacing * (l + 1);
-            const spacing = this.canvas.height / (this.layers[l] + 1);
-            
-            for (let i = 0; i < this.layers[l]; i++) {
-                const y = spacing * (i + 1);
-                this.neurons.push({ x, y, layer: l, index: i });
-                
-                // Glow
-                const gradient = ctx.createRadialGradient(x, y, 0, x, y, 25);
-                gradient.addColorStop(0, colors[l]);
-                gradient.addColorStop(1, 'transparent');
-                ctx.fillStyle = gradient;
-                ctx.beginPath();
-                ctx.arc(x, y, 25, 0, Math.PI * 2);
-                ctx.fill();
-                
-                // Body
-                ctx.fillStyle = '#12121a';
-                ctx.beginPath();
-                ctx.arc(x, y, 15, 0, Math.PI * 2);
-                ctx.fill();
-                
-                ctx.strokeStyle = colors[l];
-                ctx.lineWidth = 2;
-                ctx.stroke();
-            }
-        }
-        
-        // Highlight hovered connections
+        // Highlight hovered connections FIRST (so they appear behind neurons)
         if (this.hoveredNeuron) {
             const l = this.hoveredNeuron.layer;
             
-            ctx.strokeStyle = 'rgba(212, 168, 83, 0.6)';
-            ctx.lineWidth = 2;
+            ctx.strokeStyle = 'rgba(212, 168, 83, 0.8)';
+            ctx.lineWidth = 3;
             
-            // Forward
+            // Forward connections
             if (l < this.layers.length - 1) {
                 const spacing2 = this.canvas.height / (this.layers[l + 1] + 1);
                 for (let j = 0; j < this.layers[l + 1]; j++) {
@@ -853,7 +876,7 @@ const BasicNetworkViz = {
                 }
             }
             
-            // Backward
+            // Backward connections
             if (l > 0) {
                 const spacing1 = this.canvas.height / (this.layers[l - 1] + 1);
                 for (let i = 0; i < this.layers[l - 1]; i++) {
@@ -865,6 +888,34 @@ const BasicNetworkViz = {
             }
         }
         
+        // Draw neurons
+        for (const neuron of this.neurons) {
+            const { x, y, layer: l } = neuron;
+            const isHovered = this.hoveredNeuron && 
+                              this.hoveredNeuron.x === x && 
+                              this.hoveredNeuron.y === y;
+            
+            // Glow (bigger for hovered)
+            const glowSize = isHovered ? 35 : 25;
+            const gradient = ctx.createRadialGradient(x, y, 0, x, y, glowSize);
+            gradient.addColorStop(0, isHovered ? '#d4a853' : colors[l]);
+            gradient.addColorStop(1, 'transparent');
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(x, y, glowSize, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Body
+            ctx.fillStyle = isHovered ? '#2a2a36' : '#12121a';
+            ctx.beginPath();
+            ctx.arc(x, y, isHovered ? 18 : 15, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.strokeStyle = isHovered ? '#d4a853' : colors[l];
+            ctx.lineWidth = isHovered ? 3 : 2;
+            ctx.stroke();
+        }
+        
         // Labels
         ctx.fillStyle = '#6b6660';
         ctx.font = '12px "Sora", sans-serif';
@@ -873,6 +924,17 @@ const BasicNetworkViz = {
         const labels = ['Input', 'Hidden 1', 'Hidden 2', 'Output'];
         for (let l = 0; l < this.layers.length; l++) {
             ctx.fillText(labels[l], layerSpacing * (l + 1), this.canvas.height - 15);
+        }
+        
+        // Show touch hint on mobile
+        if (this.hoveredNeuron && this.isTouching) {
+            ctx.fillStyle = 'rgba(212, 168, 83, 0.9)';
+            ctx.font = 'bold 11px "Sora", sans-serif';
+            ctx.fillText(
+                `Layer ${this.hoveredNeuron.layer + 1}, Neuron ${this.hoveredNeuron.index + 1}`,
+                this.hoveredNeuron.x,
+                this.hoveredNeuron.y - 30
+            );
         }
     }
 };

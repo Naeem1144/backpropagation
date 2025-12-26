@@ -761,6 +761,27 @@ strong {
     max-width: 700px;
     height: 400px;
     margin: 0 auto;
+    touch-action: none; /* Prevent scrolling while interacting */
+    cursor: pointer;
+}
+
+/* Show/hide hints based on device */
+.mobile-hint {
+    display: none;
+}
+
+.desktop-hint {
+    display: inline;
+}
+
+@media (hover: none) and (pointer: coarse) {
+    /* Touch devices */
+    .mobile-hint {
+        display: inline;
+    }
+    .desktop-hint {
+        display: none;
+    }
 }
 
 /* ==========================================================================
