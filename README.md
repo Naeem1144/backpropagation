@@ -9,7 +9,7 @@ A comprehensive, interactive educational site for understanding backpropagation 
 
 ## 🌐 Live Demo
 
-**[View the site →](https://naeem1144.github.io/backpropagation)**
+**[View the site →](https://backpropagation-xi.vercel.app/)**
 
 ## 📖 Overview
 
@@ -88,7 +88,7 @@ backpropagation/
 ## 🚀 Getting Started
 
 ### View Online
-Visit **[naeem1144.github.io/backpropagation](https://naeem1144.github.io/backpropagation)**
+Visit **[naeem1144.github.io/backpropagation](https://backpropagation-xi.vercel.app/)**
 
 ### Run Locally
 
@@ -171,7 +171,7 @@ This project is open source and available under the [MIT License](LICENSE).
 <p align="center">
   Built for deep understanding. Keep learning, keep building.
   <br><br>
-  <a href="https://naeem1144.github.io/backpropagation">View Site</a> •
+  <a href="https://backpropagation-xi.vercel.app/">View Site</a> •
   <a href="https://github.com/Naeem1144/backpropagation/issues">Report Bug</a> •
   <a href="https://github.com/Naeem1144/backpropagation/issues">Request Feature</a>
 </p>
