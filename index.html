@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Understanding Backpropagation | Deep Dive into Neural Network Training</title>
+    <meta name="description" content="A comprehensive guide to backpropagation - the algorithm that revolutionized neural networks. Master the theory, mathematics, and intuition behind gradient computation with interactive visualizations.">
+    <meta name="keywords" content="backpropagation, neural networks, deep learning, machine learning, gradient descent, chain rule">
+    <meta name="author" content="Backprop Educational">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="Understanding Backpropagation | Deep Dive">
+    <meta property="og:description" content="Master the algorithm that powers deep learning with interactive visualizations and step-by-step explanations.">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="assets/og-image.png">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;500&family=Sora:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <!-- MathJax -->
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="styles/main.css">
+    
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>∇</text></svg>">
+</head>
+<body>
+    <!-- Skip Link -->
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    
+    <!-- Progress Bar -->
+    <div class="progress-bar" role="progressbar" aria-label="Reading progress"></div>
+    
+    <!-- Navigation -->
+    <nav role="navigation" aria-label="Main navigation">
+        <div class="nav-left">
+            <div class="logo">∇ Backprop</div>
+        </div>
+        <ul class="nav-links">
+            <li><a href="#introduction">Introduction</a></li>
+            <li><a href="#forward">Forward Pass</a></li>
+            <li><a href="#chain-rule">Chain Rule</a></li>
+            <li><a href="#backprop">Backprop</a></li>
+            <li><a href="#example">Example</a></li>
+            <li><a href="#advanced">Advanced</a></li>
+        </ul>
+        <div class="nav-controls">
+            <button class="theme-toggle" onclick="ThemeManager.toggle()" aria-label="Toggle theme">
+                <svg class="moon-icon" viewBox="0 0 24 24" stroke-width="2">
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                </svg>
+                <svg class="sun-icon" viewBox="0 0 24 24" stroke-width="2">
+                    <circle cx="12" cy="12" r="5"/>
+                    <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+                </svg>
+            </button>
+            <button class="mobile-menu-toggle" aria-label="Toggle menu" aria-expanded="false">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </nav>
+    
+    <!-- Mobile Navigation -->
+    <div class="mobile-nav-overlay"></div>
+    <div class="mobile-nav" role="navigation" aria-label="Mobile navigation">
+        <ul class="mobile-nav-links">
+            <li><a href="#introduction">Introduction</a></li>
+            <li><a href="#forward">Forward Pass</a></li>
+            <li><a href="#loss">Loss Functions</a></li>
+            <li><a href="#chain-rule">Chain Rule</a></li>
+            <li><a href="#backprop">Backpropagation</a></li>
+            <li><a href="#example">Worked Example</a></li>
+            <li><a href="#implementation">Implementation</a></li>
+            <li><a href="#advanced">Advanced Topics</a></li>
+            <li><a href="#practice">Practice & Debug</a></li>
+            <li><a href="#resources">Resources</a></li>
+        </ul>
+    </div>
+
+    <!-- Hero Section -->
+    <header class="hero">
+        <span class="hero-badge">Deep Learning Fundamentals</span>
+        <h1>Understanding<br><span>Backpropagation</span></h1>
+        <p class="hero-subtitle">A comprehensive guide to the algorithm that revolutionized neural networks. Master the theory, mathematics, and intuition behind gradient computation.</p>
+        <div class="hero-cta">
+            <a href="#introduction" class="btn btn-primary">Begin Learning</a>
+            <a href="#example" class="btn btn-secondary">Jump to Example</a>
+        </div>
+        <div class="scroll-indicator">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+            </svg>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main id="main-content" class="container">
+        <!-- Table of Contents -->
+        <div class="toc">
+            <div class="toc-title">Contents</div>
+            <ul class="toc-list">
+                <li><a href="#introduction"><span class="toc-number">01</span> Introduction & Motivation<svg class="toc-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></a></li>
+                <li><a href="#forward"><span class="toc-number">02</span> Forward Propagation<svg class="toc-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></a></li>
+                <li><a href="#loss"><span class="toc-number">03</span> Loss Functions<svg class="toc-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></a></li>
+                <li><a href="#chain-rule"><span class="toc-number">04</span> The Chain Rule<svg class="toc-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></a></li>
+                <li><a href="#backprop"><span class="toc-number">05</span> Backpropagation Algorithm<svg class="toc-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></a></li>
+                <li><a href="#example"><span class="toc-number">06</span> Worked Example<svg class="toc-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></a></li>
+                <li><a href="#implementation"><span class="toc-number">07</span> Implementation<svg class="toc-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></a></li>
+                <li><a href="#advanced"><span class="toc-number">08</span> Advanced Topics<svg class="toc-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></a></li>
+                <li><a href="#practice"><span class="toc-number">09</span> Practice & Debug<svg class="toc-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></a></li>
+                <li><a href="#resources"><span class="toc-number">10</span> Resources<svg class="toc-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></a></li>
+            </ul>
+        </div>
+
+        <!-- Section 1: Introduction -->
+        <section id="introduction" class="reveal">
+            <div class="section-header">
+                <span class="section-number">01</span>
+                <h2>Introduction & Motivation</h2>
+            </div>
+
+            <p>
+                <strong>Backpropagation</strong> (backward propagation of errors) is the cornerstone algorithm for training neural networks. First introduced in the 1970s and popularized by Rumelhart, Hinton, and Williams in 1986, it provides an efficient method for computing gradients in multi-layer networks.
+            </p>
+
+            <p>
+                At its heart, backpropagation answers a fundamental question: <em>How much does each weight in a neural network contribute to the overall error?</em> By answering this question, we can adjust weights to minimize error and improve predictions.
+            </p>
+
+            <div class="definition">
+                <div class="definition-title">Definition: Backpropagation</div>
+                <p style="margin-bottom: 0;">
+                    Backpropagation is an algorithm for computing the gradient of a loss function with respect to the weights of a neural network. It applies the chain rule of calculus systematically, propagating error signals backward through the network from output to input.
+                </p>
+            </div>
+
+            <h3>Why Do We Need Backpropagation?</h3>
+
+            <p>
+                Neural networks learn by adjusting their weights to minimize a loss function. This requires knowing the <strong>gradient</strong>—the direction and magnitude of change that will reduce the loss. For a network with millions of parameters, computing these gradients efficiently is crucial.
+            </p>
+
+            <div class="insight">
+                <div class="insight-icon">💡</div>
+                <div class="insight-title">Key Insight</div>
+                <p style="margin-bottom: 0;">
+                    Without backpropagation, computing gradients would require \(O(W^2)\) operations (where \(W\) is the number of weights). Backpropagation reduces this to \(O(W)\), making deep learning computationally feasible.
+                </p>
+            </div>
+
+            <h3>The Learning Process Overview</h3>
+
+            <ol class="steps">
+                <li><strong>Forward Pass:</strong> Input data flows through the network, layer by layer, producing an output prediction.</li>
+                <li><strong>Loss Computation:</strong> The prediction is compared to the true label using a loss function, producing a scalar error value.</li>
+                <li><strong>Backward Pass:</strong> Gradients are computed by propagating the error backward through the network using the chain rule.</li>
+                <li><strong>Weight Update:</strong> Weights are adjusted in the direction that minimizes the loss (gradient descent).</li>
+            </ol>
+
+            <!-- Animated Network Visualization -->
+            <div class="visualization-container">
+                <div class="visualization-title">🧠 Animated Forward/Backward Pass</div>
+                <div class="visualization-controls">
+                    <button class="control-btn" onclick="AnimatedNetworkViz.play()">▶ Play</button>
+                    <button class="control-btn" onclick="AnimatedNetworkViz.pause()">⏸ Pause</button>
+                    <button class="control-btn" onclick="AnimatedNetworkViz.stepForward()">⏭ Step</button>
+                    <button class="control-btn" onclick="AnimatedNetworkViz.reset()">↺ Reset</button>
+                </div>
+                <canvas id="animated-network-canvas" class="visualization-canvas"></canvas>
+                <div class="visualization-info">
+                    Watch data flow forward (cyan) through the network, then gradients flow backward (magenta).
+                </div>
+            </div>
+
+            <!-- Quiz 1 -->
+            <div class="quiz-container" id="quiz-intro-container"></div>
+        </section>
+
+        <div class="divider"></div>
+
+        <!-- Section 2: Forward Propagation -->
+        <section id="forward" class="reveal">
+            <div class="section-header">
+                <span class="section-number">02</span>
+                <h2>Forward Propagation</h2>
+            </div>
+
+            <p>
+                Before understanding backpropagation, we must first understand how data flows <em>forward</em> through a neural network. This forward pass transforms inputs into outputs through a series of linear transformations and non-linear activations.
+            </p>
+
+            <h3>Neuron Computation</h3>
+
+            <p>
+                A single neuron computes a weighted sum of its inputs, adds a bias, and applies an activation function:
+            </p>
+
+            <div class="math-block">
+                <span class="math-label">Single Neuron</span>
+                \[z = \sum_{i=1}^{n} w_i x_i + b = \mathbf{w}^T \mathbf{x} + b\]
+                \[a = \sigma(z)\]
+            </div>
+
+            <p>Where:</p>
+            <ul style="margin-left: 2rem; margin-bottom: 1.5rem; color: var(--text-secondary);">
+                <li>\(\mathbf{x}\) is the input vector</li>
+                <li>\(\mathbf{w}\) is the weight vector</li>
+                <li>\(b\) is the bias term</li>
+                <li>\(z\) is the pre-activation (weighted sum)</li>
+                <li>\(\sigma\) is the activation function</li>
+                <li>\(a\) is the activation (output)</li>
+            </ul>
+
+            <h3>Layer-wise Computation</h3>
+
+            <div class="math-block highlight">
+                <span class="math-label">Layer Computation</span>
+                \[\mathbf{z}^{[l]} = \mathbf{W}^{[l]} \mathbf{a}^{[l-1]} + \mathbf{b}^{[l]}\]
+                \[\mathbf{a}^{[l]} = \sigma(\mathbf{z}^{[l]})\]
+            </div>
+
+            <h3>Activation Functions</h3>
+
+            <!-- Activation Function Explorer -->
+            <div class="visualization-container">
+                <div class="visualization-title">📈 Activation Function Explorer</div>
+                <div class="visualization-controls">
+                    <button class="control-btn active" onclick="ActivationExplorer.setFunction('sigmoid'); this.parentElement.querySelectorAll('.control-btn').forEach(b=>b.classList.remove('active')); this.classList.add('active')">Sigmoid</button>
+                    <button class="control-btn" onclick="ActivationExplorer.setFunction('tanh'); this.parentElement.querySelectorAll('.control-btn').forEach(b=>b.classList.remove('active')); this.classList.add('active')">Tanh</button>
+                    <button class="control-btn" onclick="ActivationExplorer.setFunction('relu'); this.parentElement.querySelectorAll('.control-btn').forEach(b=>b.classList.remove('active')); this.classList.add('active')">ReLU</button>
+                    <button class="control-btn" onclick="ActivationExplorer.setFunction('leakyRelu'); this.parentElement.querySelectorAll('.control-btn').forEach(b=>b.classList.remove('active')); this.classList.add('active')">Leaky ReLU</button>
+                </div>
+                <canvas id="activation-canvas" class="visualization-canvas"></canvas>
+                <div class="visualization-info" id="activation-info">Move mouse over the graph to see values</div>
+            </div>
+
+            <div class="math-block">
+                <span class="math-label">Common Activation Functions</span>
+                <p style="color: var(--text-secondary); margin-bottom: 1rem;"><strong>Sigmoid:</strong></p>
+                \[\sigma(z) = \frac{1}{1 + e^{-z}}, \quad \sigma'(z) = \sigma(z)(1 - \sigma(z))\]
+                
+                <p style="color: var(--text-secondary); margin: 1rem 0;"><strong>ReLU:</strong></p>
+                \[\text{ReLU}(z) = \max(0, z), \quad \text{ReLU}'(z) = \begin{cases} 1 & \text{if } z > 0 \\ 0 & \text{otherwise} \end{cases}\]
+            </div>
+
+            <div class="nn-visualization">
+                <h4 style="margin-top: 0;">Interactive Neural Network</h4>
+                <canvas id="nn-canvas" class="nn-canvas"></canvas>
+                <p style="font-size: 0.9rem; margin-top: 1rem; margin-bottom: 0;">Hover over neurons to see connections</p>
+            </div>
+        </section>
+
+        <div class="divider"></div>
+
+        <!-- Section 3: Loss Functions -->
+        <section id="loss" class="reveal">
+            <div class="section-header">
+                <span class="section-number">03</span>
+                <h2>Loss Functions</h2>
+            </div>
+
+            <p>
+                The loss function quantifies how far our predictions are from the true values. It's the objective we're trying to minimize during training.
+            </p>
+
+            <h3>Mean Squared Error (MSE)</h3>
+
+            <div class="math-block">
+                <span class="math-label">MSE Loss</span>
+                \[\mathcal{L}_{MSE} = \frac{1}{n} \sum_{i=1}^{n} (y_i - \hat{y}_i)^2\]
+                \[\frac{\partial \mathcal{L}}{\partial \hat{y}_i} = \frac{2}{n}(\hat{y}_i - y_i)\]
+            </div>
+
+            <h3>Binary Cross-Entropy</h3>
+
+            <div class="math-block">
+                <span class="math-label">Binary Cross-Entropy</span>
+                \[\mathcal{L}_{BCE} = -\frac{1}{n} \sum_{i=1}^{n} \left[ y_i \log(\hat{y}_i) + (1-y_i) \log(1-\hat{y}_i) \right]\]
+            </div>
+
+            <h3>Categorical Cross-Entropy</h3>
+
+            <div class="math-block">
+                <span class="math-label">Categorical Cross-Entropy</span>
+                \[\mathcal{L}_{CE} = -\sum_{i=1}^{C} y_i \log(\hat{y}_i)\]
+            </div>
+        </section>
+
+        <div class="divider"></div>
+
+        <!-- Section 4: Chain Rule -->
+        <section id="chain-rule" class="reveal">
+            <div class="section-header">
+                <span class="section-number">04</span>
+                <h2>The Chain Rule</h2>
+            </div>
+
+            <p>
+                The chain rule is the mathematical foundation of backpropagation. It allows us to compute derivatives of composite functions.
+            </p>
+
+            <div class="definition">
+                <div class="definition-title">The Chain Rule</div>
+                <p style="margin-bottom: 0;">
+                    If \(y = f(u)\) and \(u = g(x)\), then:
+                    \[\frac{dy}{dx} = \frac{dy}{du} \cdot \frac{du}{dx}\]
+                </p>
+            </div>
+
+            <h3>Computational Graph</h3>
+
+            <p>Consider a simple computation: \(f = (x + y) \cdot z\)</p>
+
+            <!-- Computational Graph Visualization -->
+            <div class="visualization-container">
+                <div class="visualization-title">📊 Computational Graph</div>
+                <div class="visualization-controls">
+                    <button class="control-btn active" onclick="CompGraphViz.setMode('forward'); this.parentElement.querySelectorAll('.control-btn').forEach(b=>b.classList.remove('active')); this.classList.add('active')">Forward Values</button>
+                    <button class="control-btn" onclick="CompGraphViz.setMode('backward'); this.parentElement.querySelectorAll('.control-btn').forEach(b=>b.classList.remove('active')); this.classList.add('active')">Backward Gradients</button>
+                </div>
+                <div id="comp-graph-container"></div>
+            </div>
+
+            <div class="insight">
+                <div class="insight-icon">🔗</div>
+                <div class="insight-title">The Power of Local Computation</div>
+                <p style="margin-bottom: 0;">
+                    Each node only needs to know its local gradient—how its output changes with respect to its inputs. The chain rule combines these local gradients to compute global gradients.
+                </p>
+            </div>
+
+            <div class="math-block">
+                <span class="math-label">Multivariate Chain Rule</span>
+                \[\frac{\partial \mathcal{L}}{\partial x} = \sum_{i} \frac{\partial \mathcal{L}}{\partial y_i} \cdot \frac{\partial y_i}{\partial x}\]
+            </div>
+        </section>
+
+        <div class="divider"></div>
+
+        <!-- Section 5: Backpropagation Algorithm -->
+        <section id="backprop" class="reveal">
+            <div class="section-header">
+                <span class="section-number">05</span>
+                <h2>The Backpropagation Algorithm</h2>
+            </div>
+
+            <p>
+                Now we combine everything: forward propagation, loss functions, and the chain rule to derive backpropagation.
+            </p>
+
+            <h3>The Key Quantity: δ (Delta)</h3>
+
+            <div class="math-block highlight">
+                <span class="math-label">Error Term Definition</span>
+                \[\boldsymbol{\delta}^{[l]} = \frac{\partial \mathcal{L}}{\partial \mathbf{z}^{[l]}}\]
+            </div>
+
+            <p>Once we have \(\boldsymbol{\delta}^{[l]}\), we can compute the gradients:</p>
+
+            <div class="math-block">
+                <span class="math-label">Gradient Formulas</span>
+                \[\frac{\partial \mathcal{L}}{\partial \mathbf{W}^{[l]}} = \boldsymbol{\delta}^{[l]} (\mathbf{a}^{[l-1]})^T\]
+                \[\frac{\partial \mathcal{L}}{\partial \mathbf{b}^{[l]}} = \boldsymbol{\delta}^{[l]}\]
+            </div>
+
+            <h3>The Backpropagation Equations</h3>
+
+            <h4>Step 1: Output Layer Error</h4>
+
+            <div class="math-block">
+                <span class="math-label">Output Error</span>
+                \[\boldsymbol{\delta}^{[L]} = \frac{\partial \mathcal{L}}{\partial \mathbf{a}^{[L]}} \odot \sigma'(\mathbf{z}^{[L]})\]
+            </div>
+
+            <h4>Step 2: Propagate Error Backward</h4>
+
+            <div class="math-block highlight">
+                <span class="math-label">Error Propagation</span>
+                \[\boldsymbol{\delta}^{[l]} = \left( (\mathbf{W}^{[l+1]})^T \boldsymbol{\delta}^{[l+1]} \right) \odot \sigma'(\mathbf{z}^{[l]})\]
+            </div>
+
+            <div class="insight">
+                <div class="insight-icon">🎯</div>
+                <div class="insight-title">Intuition Behind Error Propagation</div>
+                <p style="margin-bottom: 0;">
+                    The term \((\mathbf{W}^{[l+1]})^T \boldsymbol{\delta}^{[l+1]}\) distributes the error from layer \(l+1\) back to layer \(l\). The term \(\sigma'(\mathbf{z}^{[l]})\) scales by how sensitive the activation is.
+                </p>
+            </div>
+
+            <h3>Complete Algorithm Summary</h3>
+
+            <ol class="steps">
+                <li><strong>Forward Pass:</strong> Compute all \(\mathbf{z}^{[l]}\) and \(\mathbf{a}^{[l]}\)</li>
+                <li><strong>Output Error:</strong> Compute \(\boldsymbol{\delta}^{[L]} = \nabla_{\mathbf{a}^{[L]}} \mathcal{L} \odot \sigma'(\mathbf{z}^{[L]})\)</li>
+                <li><strong>Backpropagate:</strong> For \(l = L-1, \ldots, 1\): compute \(\boldsymbol{\delta}^{[l]}\)</li>
+                <li><strong>Compute Gradients:</strong> \(\nabla_{\mathbf{W}^{[l]}} \mathcal{L}\), \(\nabla_{\mathbf{b}^{[l]}} \mathcal{L}\)</li>
+                <li><strong>Update Weights:</strong> \(\mathbf{W}^{[l]} \leftarrow \mathbf{W}^{[l]} - \eta \nabla_{\mathbf{W}^{[l]}} \mathcal{L}\)</li>
+            </ol>
+
+            <!-- Quiz 2 -->
+            <div class="quiz-container" id="quiz-backprop-container"></div>
+        </section>
+
+        <div class="divider"></div>
+
+        <!-- Section 6: Worked Example -->
+        <section id="example" class="reveal">
+            <div class="section-header">
+                <span class="section-number">06</span>
+                <h2>Worked Example</h2>
+            </div>
+
+            <p>
+                Let's work through a complete example with a simple 2-layer network.
+            </p>
+
+            <h3>Network Setup</h3>
+
+            <p>
+                <strong>Architecture:</strong> 2 inputs → 2 hidden neurons → 1 output<br>
+                <strong>Activation:</strong> Sigmoid<br>
+                <strong>Loss:</strong> Mean Squared Error
+            </p>
+
+            <div class="math-block">
+                <span class="math-label">Initial Values</span>
+                <p style="color: var(--text-secondary);">Input: \(\mathbf{x} = [0.5, 0.3]^T\), Target: \(y = 1\)</p>
+                
+                <p style="color: var(--text-secondary); margin-top: 1rem;">Layer 1:</p>
+                \[\mathbf{W}^{[1]} = \begin{bmatrix} 0.1 & 0.2 \\ 0.3 & 0.4 \end{bmatrix}, \quad \mathbf{b}^{[1]} = \begin{bmatrix} 0.1 \\ 0.1 \end{bmatrix}\]
+                
+                <p style="color: var(--text-secondary); margin-top: 1rem;">Layer 2:</p>
+                \[\mathbf{W}^{[2]} = \begin{bmatrix} 0.5 & 0.6 \end{bmatrix}, \quad b^{[2]} = 0.1\]
+            </div>
+
+            <h3>Forward Pass</h3>
+
+            <div class="math-block">
+                <span class="math-label">Hidden Layer</span>
+                \[\mathbf{z}^{[1]} = \begin{bmatrix} 0.21 \\ 0.37 \end{bmatrix}, \quad \mathbf{a}^{[1]} = \begin{bmatrix} 0.5523 \\ 0.5914 \end{bmatrix}\]
+            </div>
+
+            <div class="math-block">
+                <span class="math-label">Output Layer</span>
+                \[z^{[2]} = 0.631, \quad \hat{y} = 0.6526\]
+                \[\mathcal{L} = \frac{1}{2}(1 - 0.6526)^2 = 0.0604\]
+            </div>
+
+            <h3>Backward Pass</h3>
+
+            <div class="math-block highlight">
+                <span class="math-label">δ² Computation</span>
+                \[\delta^{[2]} = -(1 - 0.6526) \cdot 0.2267 = -0.0788\]
+            </div>
+
+            <div class="math-block highlight">
+                <span class="math-label">δ¹ Computation</span>
+                \[\boldsymbol{\delta}^{[1]} = \begin{bmatrix} -0.0097 \\ -0.0114 \end{bmatrix}\]
+            </div>
+
+            <!-- Interactive Calculator -->
+            <div class="demo-container" id="backprop-calc-container"></div>
+        </section>
+
+        <div class="divider"></div>
+
+        <!-- Section 7: Implementation -->
+        <section id="implementation" class="reveal">
+            <div class="section-header">
+                <span class="section-number">07</span>
+                <h2>Implementation</h2>
+            </div>
+
+            <p>
+                Here's a complete Python implementation of backpropagation from scratch:
+            </p>
+
+            <div class="code-block">
+                <div class="code-block-header">
+                    <span class="code-block-lang">Python</span>
+                    <button class="copy-btn">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="9" y="9" width="13" height="13" rx="2"/>
+                            <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+                        </svg>
+                        Copy
+                    </button>
+                </div>
+                <pre><span class="keyword">import</span> numpy <span class="keyword">as</span> np
+
+<span class="keyword">class</span> <span class="function">NeuralNetwork</span>:
+    <span class="keyword">def</span> <span class="function">__init__</span>(self, layer_sizes):
+        <span class="comment">"""Initialize with Xavier initialization"""</span>
+        self.L = len(layer_sizes) - <span class="number">1</span>
+        self.weights = {}
+        self.biases = {}
+        
+        <span class="keyword">for</span> l <span class="keyword">in</span> range(<span class="number">1</span>, self.L + <span class="number">1</span>):
+            self.weights[l] = np.random.randn(
+                layer_sizes[l], layer_sizes[l-<span class="number">1</span>]
+            ) * np.sqrt(<span class="number">2</span> / layer_sizes[l-<span class="number">1</span>])
+            self.biases[l] = np.zeros((layer_sizes[l], <span class="number">1</span>))
+    
+    <span class="keyword">def</span> <span class="function">sigmoid</span>(self, z):
+        <span class="keyword">return</span> <span class="number">1</span> / (<span class="number">1</span> + np.exp(-np.clip(z, -<span class="number">500</span>, <span class="number">500</span>)))
+    
+    <span class="keyword">def</span> <span class="function">sigmoid_derivative</span>(self, z):
+        s = self.sigmoid(z)
+        <span class="keyword">return</span> s * (<span class="number">1</span> - s)
+    
+    <span class="keyword">def</span> <span class="function">forward</span>(self, X):
+        <span class="comment">"""Forward pass"""</span>
+        self.cache = {<span class="string">'a'</span>: {<span class="number">0</span>: X}, <span class="string">'z'</span>: {}}
+        a = X
+        <span class="keyword">for</span> l <span class="keyword">in</span> range(<span class="number">1</span>, self.L + <span class="number">1</span>):
+            z = self.weights[l] @ a + self.biases[l]
+            a = self.sigmoid(z)
+            self.cache[<span class="string">'z'</span>][l] = z
+            self.cache[<span class="string">'a'</span>][l] = a
+        <span class="keyword">return</span> a
+    
+    <span class="keyword">def</span> <span class="function">backward</span>(self, y_true):
+        <span class="comment">"""Backpropagation"""</span>
+        m = y_true.shape[<span class="number">1</span>]
+        gradients = {<span class="string">'dW'</span>: {}, <span class="string">'db'</span>: {}}
+        
+        <span class="comment"># Output layer</span>
+        a_L = self.cache[<span class="string">'a'</span>][self.L]
+        z_L = self.cache[<span class="string">'z'</span>][self.L]
+        delta = (a_L - y_true) * self.sigmoid_derivative(z_L)
+        
+        gradients[<span class="string">'dW'</span>][self.L] = delta @ self.cache[<span class="string">'a'</span>][self.L-<span class="number">1</span>].T / m
+        gradients[<span class="string">'db'</span>][self.L] = np.sum(delta, axis=<span class="number">1</span>, keepdims=<span class="keyword">True</span>) / m
+        
+        <span class="comment"># Hidden layers</span>
+        <span class="keyword">for</span> l <span class="keyword">in</span> range(self.L - <span class="number">1</span>, <span class="number">0</span>, -<span class="number">1</span>):
+            delta = (self.weights[l+<span class="number">1</span>].T @ delta) * \
+                    self.sigmoid_derivative(self.cache[<span class="string">'z'</span>][l])
+            gradients[<span class="string">'dW'</span>][l] = delta @ self.cache[<span class="string">'a'</span>][l-<span class="number">1</span>].T / m
+            gradients[<span class="string">'db'</span>][l] = np.sum(delta, axis=<span class="number">1</span>, keepdims=<span class="keyword">True</span>) / m
+        
+        <span class="keyword">return</span> gradients
+    
+    <span class="keyword">def</span> <span class="function">train</span>(self, X, y, epochs, lr):
+        <span class="keyword">for</span> epoch <span class="keyword">in</span> range(epochs):
+            y_pred = self.forward(X)
+            loss = np.mean((y_pred - y) ** <span class="number">2</span>) / <span class="number">2</span>
+            grads = self.backward(y)
+            
+            <span class="keyword">for</span> l <span class="keyword">in</span> range(<span class="number">1</span>, self.L + <span class="number">1</span>):
+                self.weights[l] -= lr * grads[<span class="string">'dW'</span>][l]
+                self.biases[l] -= lr * grads[<span class="string">'db'</span>][l]
+            
+            <span class="keyword">if</span> epoch % <span class="number">100</span> == <span class="number">0</span>:
+                print(f<span class="string">"Epoch {epoch}, Loss: {loss:.6f}"</span>)
+
+<span class="comment"># Example: XOR problem</span>
+X = np.array([[<span class="number">0</span>,<span class="number">0</span>,<span class="number">1</span>,<span class="number">1</span>], [<span class="number">0</span>,<span class="number">1</span>,<span class="number">0</span>,<span class="number">1</span>]])
+y = np.array([[<span class="number">0</span>,<span class="number">1</span>,<span class="number">1</span>,<span class="number">0</span>]])
+
+nn = NeuralNetwork([<span class="number">2</span>, <span class="number">4</span>, <span class="number">1</span>])
+nn.train(X, y, epochs=<span class="number">5000</span>, lr=<span class="number">1.0</span>)
+print(nn.forward(X))</pre>
+            </div>
+        </section>
+
+        <div class="divider"></div>
+
+        <!-- Section 8: Advanced Topics -->
+        <section id="advanced" class="reveal">
+            <div class="section-header">
+                <span class="section-number">08</span>
+                <h2>Advanced Topics</h2>
+            </div>
+
+            <h3>The Vanishing Gradient Problem</h3>
+
+            <p>
+                When gradients are multiplied through many layers, they can become exponentially small (vanish) or large (explode).
+            </p>
+
+            <div class="insight">
+                <div class="insight-icon">🔧</div>
+                <div class="insight-title">Solutions to Vanishing Gradients</div>
+                <ul style="margin-bottom: 0; color: var(--text-secondary); padding-left: 1.5rem;">
+                    <li><strong>ReLU activation:</strong> Preserves gradient magnitude</li>
+                    <li><strong>Residual connections:</strong> Skip connections for gradient flow</li>
+                    <li><strong>Batch normalization:</strong> Prevents saturation</li>
+                    <li><strong>Careful initialization:</strong> Xavier or He initialization</li>
+                </ul>
+            </div>
+
+            <h3>Gradient Descent Variants</h3>
+
+            <!-- Gradient Descent Visualization -->
+            <div class="visualization-container">
+                <div class="visualization-title">📉 Gradient Descent Optimization</div>
+                <div class="visualization-controls">
+                    <button class="control-btn active" onclick="GradientDescentViz.setOptimizer('sgd'); this.parentElement.querySelectorAll('.control-btn:not(.start-btn)').forEach(b=>b.classList.remove('active')); this.classList.add('active')">SGD</button>
+                    <button class="control-btn" onclick="GradientDescentViz.setOptimizer('momentum'); this.parentElement.querySelectorAll('.control-btn:not(.start-btn)').forEach(b=>b.classList.remove('active')); this.classList.add('active')">Momentum</button>
+                    <button class="control-btn" onclick="GradientDescentViz.setOptimizer('adam'); this.parentElement.querySelectorAll('.control-btn:not(.start-btn)').forEach(b=>b.classList.remove('active')); this.classList.add('active')">Adam</button>
+                    <button class="control-btn start-btn" onclick="GradientDescentViz.start()">▶ Start</button>
+                    <button class="control-btn" onclick="GradientDescentViz.reset()">↺ Reset</button>
+                </div>
+                <canvas id="gradient-descent-canvas" class="visualization-canvas"></canvas>
+            </div>
+
+            <div class="math-block">
+                <span class="math-label">Adam Optimizer</span>
+                \[\mathbf{m}_t = \beta_1 \mathbf{m}_{t-1} + (1-\beta_1) \nabla \mathcal{L}\]
+                \[\mathbf{v}_t = \beta_2 \mathbf{v}_{t-1} + (1-\beta_2) (\nabla \mathcal{L})^2\]
+                \[\theta_{t+1} = \theta_t - \eta \frac{\hat{\mathbf{m}}_t}{\sqrt{\hat{\mathbf{v}}_t} + \epsilon}\]
+            </div>
+
+            <!-- Collapsible: Backprop Through Special Layers -->
+            <div class="collapsible">
+                <div class="collapsible-header" tabindex="0" role="button" aria-expanded="false">
+                    <div class="collapsible-title">
+                        <span>📦</span> Backprop Through Special Layers
+                    </div>
+                    <svg class="collapsible-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M6 9l6 6 6-6"/>
+                    </svg>
+                </div>
+                <div class="collapsible-content">
+                    <div class="collapsible-inner">
+                        <h4>Convolutional Layers</h4>
+                        <p>Backprop through convolutions uses the "im2col" trick - unrolling the convolution into matrix multiplication, then applying standard backprop.</p>
+                        
+                        <h4>Batch Normalization</h4>
+                        <p>Requires computing gradients through the normalization statistics. The gradient flows through both the normalized values and the learned scale/shift parameters.</p>
+                        
+                        <h4>Dropout</h4>
+                        <p>During training, gradients only flow through non-dropped units (scaled by 1/p). During inference, no dropout is applied.</p>
+                        
+                        <h4>Residual Connections</h4>
+                        <p>Skip connections allow gradients to flow directly: \(\frac{\partial}{\partial x}(x + F(x)) = 1 + \frac{\partial F}{\partial x}\), preventing vanishing gradients.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Collapsible: Matrix Calculus Reference -->
+            <div class="collapsible">
+                <div class="collapsible-header" tabindex="0" role="button" aria-expanded="false">
+                    <div class="collapsible-title">
+                        <span>📐</span> Matrix Calculus Quick Reference
+                    </div>
+                    <svg class="collapsible-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M6 9l6 6 6-6"/>
+                    </svg>
+                </div>
+                <div class="collapsible-content">
+                    <div class="collapsible-inner">
+                        <div class="math-block">
+                            <span class="math-label">Common Derivatives</span>
+                            \[\frac{\partial}{\partial \mathbf{x}}(\mathbf{a}^T\mathbf{x}) = \mathbf{a}\]
+                            \[\frac{\partial}{\partial \mathbf{x}}(\mathbf{x}^T\mathbf{A}\mathbf{x}) = (\mathbf{A} + \mathbf{A}^T)\mathbf{x}\]
+                            \[\frac{\partial}{\partial \mathbf{X}}(\mathbf{a}^T\mathbf{X}\mathbf{b}) = \mathbf{a}\mathbf{b}^T\]
+                            \[\frac{\partial}{\partial \mathbf{X}}\text{tr}(\mathbf{A}\mathbf{X}^T) = \mathbf{A}\]
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <div class="divider"></div>
+
+        <!-- Section 9: Practice & Debug -->
+        <section id="practice" class="reveal">
+            <div class="section-header">
+                <span class="section-number">09</span>
+                <h2>Practice & Debug</h2>
+            </div>
+
+            <h3>Gradient Checking</h3>
+
+            <p>
+                Always verify your gradients numerically! Gradient checking compares your analytical gradients to numerical approximations.
+            </p>
+
+            <div class="visualization-container" id="gradient-checker-container"></div>
+
+            <h3>Common Bugs & Debugging Tips</h3>
+
+            <div class="insight">
+                <div class="insight-icon">🐛</div>
+                <div class="insight-title">Common Backprop Bugs</div>
+                <ul style="margin-bottom: 0; color: var(--text-secondary); padding-left: 1.5rem;">
+                    <li><strong>Shape mismatches:</strong> Always verify tensor dimensions</li>
+                    <li><strong>Forgetting bias gradients:</strong> Remember \(\nabla_b = \delta\)</li>
+                    <li><strong>Wrong averaging:</strong> Divide by batch size in the right place</li>
+                    <li><strong>Numerical instability:</strong> Clip values, use stable softmax</li>
+                    <li><strong>Gradient not flowing:</strong> Check for dead ReLUs, vanishing gradients</li>
+                </ul>
+            </div>
+
+            <!-- Quiz 3 -->
+            <div class="quiz-container" id="quiz-debug-container"></div>
+        </section>
+
+        <div class="divider"></div>
+
+        <!-- Section 10: Resources -->
+        <section id="resources" class="reveal">
+            <div class="section-header">
+                <span class="section-number">10</span>
+                <h2>Resources</h2>
+            </div>
+
+            <h3>Further Reading</h3>
+
+            <ul style="color: var(--text-secondary); padding-left: 1.5rem; margin-bottom: 2rem;">
+                <li><a href="https://www.nature.com/articles/323533a0" style="color: var(--accent-cyan);">Rumelhart et al. (1986)</a> - Original backprop paper</li>
+                <li><a href="http://neuralnetworksanddeeplearning.com/" style="color: var(--accent-cyan);">Neural Networks and Deep Learning</a> - Michael Nielsen's online book</li>
+                <li><a href="https://cs231n.github.io/" style="color: var(--accent-cyan);">CS231n</a> - Stanford's CNN course notes</li>
+                <li><a href="https://www.deeplearningbook.org/" style="color: var(--accent-cyan);">Deep Learning Book</a> - Goodfellow, Bengio, Courville</li>
+            </ul>
+
+            <h3>Framework Documentation</h3>
+
+            <ul style="color: var(--text-secondary); padding-left: 1.5rem; margin-bottom: 2rem;">
+                <li><a href="https://pytorch.org/tutorials/beginner/blitz/autograd_tutorial.html" style="color: var(--accent-cyan);">PyTorch Autograd</a></li>
+                <li><a href="https://www.tensorflow.org/guide/autodiff" style="color: var(--accent-cyan);">TensorFlow Autodiff</a></li>
+                <li><a href="https://jax.readthedocs.io/en/latest/notebooks/autodiff_cookbook.html" style="color: var(--accent-cyan);">JAX Autodiff</a></li>
+            </ul>
+
+            <div class="definition">
+                <div class="definition-title">Key Takeaways</div>
+                <ul style="margin-bottom: 0; color: var(--text-secondary); padding-left: 1.5rem;">
+                    <li>Backpropagation efficiently computes gradients using the chain rule</li>
+                    <li>The error term δ captures each neuron's contribution to loss</li>
+                    <li>Gradients flow backward, scaled by weights and activation derivatives</li>
+                    <li>Modern frameworks handle backprop automatically via autodiff</li>
+                    <li>Always verify with gradient checking during development</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Summary -->
+        <section class="reveal">
+            <div class="section-header">
+                <span class="section-number">∞</span>
+                <h2>Summary</h2>
+            </div>
+
+            <p>
+                Backpropagation is one of the most important algorithms in machine learning. Understanding it deeply will make you a better practitioner and give you intuition for debugging training issues and designing architectures.
+            </p>
+
+            <p>
+                Keep practicing, implement it from scratch, and don't be afraid to dive into the math. The concepts here form the foundation of all modern deep learning.
+            </p>
+        </section>
+    </main>
+
+    <!-- Back to Top Button -->
+    <button class="back-to-top" aria-label="Back to top">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 15l-6-6-6 6"/>
+        </svg>
+    </button>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <p>Built for deep understanding. Keep learning, keep building.</p>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="scripts/ui.js"></script>
+    <script src="scripts/visualizations.js"></script>
+    <script src="scripts/interactive.js"></script>
+    
+    <script>
+        // Initialize all components
+        document.addEventListener('DOMContentLoaded', () => {
+            // Visualizations
+            AnimatedNetworkViz.init('animated-network-canvas');
+            BasicNetworkViz.init('nn-canvas');
+            ActivationExplorer.init('activation-canvas');
+            CompGraphViz.init('comp-graph-container');
+            GradientDescentViz.init('gradient-descent-canvas');
+            
+            // Interactive tools
+            BackpropCalculator.init('backprop-calc-container');
+            GradientChecker.init('gradient-checker-container');
+            
+            // Register quizzes
+            QuizSystem.register('quiz-intro', [
+                {
+                    question: 'What is the main purpose of backpropagation?',
+                    options: [
+                        'To make predictions on new data',
+                        'To compute gradients of the loss with respect to weights',
+                        'To initialize neural network weights',
+                        'To normalize the input data'
+                    ],
+                    correct: 1,
+                    explanation: 'Backpropagation computes the gradients of the loss function with respect to each weight, enabling gradient-based optimization.'
+                },
+                {
+                    question: 'What is the time complexity of backpropagation compared to naive gradient computation?',
+                    options: [
+                        'O(W²) vs O(W)',
+                        'O(W) vs O(W²)',
+                        'O(log W) vs O(W)',
+                        'They are the same'
+                    ],
+                    correct: 1,
+                    explanation: 'Backpropagation achieves O(W) complexity by reusing intermediate computations, versus O(W²) for computing each gradient independently.'
+                }
+            ]);
+            QuizSystem.render('quiz-intro', 'quiz-intro-container');
+            
+            QuizSystem.register('quiz-backprop', [
+                {
+                    question: 'In the backpropagation equation δ[l] = (W[l+1])ᵀδ[l+1] ⊙ σ\'(z[l]), what does the ⊙ symbol represent?',
+                    options: [
+                        'Matrix multiplication',
+                        'Element-wise (Hadamard) product',
+                        'Dot product',
+                        'Outer product'
+                    ],
+                    correct: 1,
+                    explanation: 'The ⊙ symbol represents element-wise multiplication (Hadamard product), which scales each element of the propagated error by the local derivative.'
+                },
+                {
+                    question: 'Why do we multiply by σ\'(z[l]) when propagating errors backward?',
+                    options: [
+                        'To normalize the gradients',
+                        'To account for how sensitive the activation is to changes in z',
+                        'To prevent overflow errors',
+                        'To make the computation faster'
+                    ],
+                    correct: 1,
+                    explanation: 'We multiply by σ\'(z[l]) because the chain rule requires us to account for how the activation function transforms changes in z into changes in a.'
+                }
+            ]);
+            QuizSystem.render('quiz-backprop', 'quiz-backprop-container');
+            
+            QuizSystem.register('quiz-debug', [
+                {
+                    question: 'When gradient checking, what relative error threshold typically indicates correct gradients?',
+                    options: [
+                        'Less than 1e-2',
+                        'Less than 1e-5',
+                        'Less than 1',
+                        'Exactly 0'
+                    ],
+                    correct: 1,
+                    explanation: 'A relative error less than 1e-5 (or 1e-7 for double precision) typically indicates correct gradient implementation. Small numerical errors are expected.'
+                },
+                {
+                    question: 'What is a "dead ReLU"?',
+                    options: [
+                        'A ReLU that outputs very large values',
+                        'A ReLU neuron that always outputs 0 and never learns',
+                        'A ReLU with negative weights',
+                        'A ReLU applied to the output layer'
+                    ],
+                    correct: 1,
+                    explanation: 'A dead ReLU is a neuron that always outputs 0 because its input is always negative. Since ReLU\'s gradient is 0 for negative inputs, the neuron can\'t learn.'
+                }
+            ]);
+            QuizSystem.render('quiz-debug', 'quiz-debug-container');
+        });
+    </script>
+</body>
+</html>
