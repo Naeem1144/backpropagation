@@ -518,6 +518,26 @@ const ActivationExplorer = {
             this.draw();
             this.updateInfo();
         });
+        
+        // Touch interaction for mobile
+        this.canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            const rect = this.canvas.getBoundingClientRect();
+            const touch = e.touches[0];
+            const x = touch.clientX - rect.left;
+            this.inputValue = this.screenToMath(x);
+            this.draw();
+            this.updateInfo();
+        }, { passive: false });
+        
+        this.canvas.addEventListener('touchstart', (e) => {
+            const rect = this.canvas.getBoundingClientRect();
+            const touch = e.touches[0];
+            const x = touch.clientX - rect.left;
+            this.inputValue = this.screenToMath(x);
+            this.draw();
+            this.updateInfo();
+        });
     },
     
     resize() {
@@ -717,18 +737,38 @@ const BasicNetworkViz = {
             const rect = this.canvas.getBoundingClientRect();
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
-            
-            this.hoveredNeuron = null;
-            for (const neuron of this.neurons) {
-                const dist = Math.sqrt((x - neuron.x) ** 2 + (y - neuron.y) ** 2);
-                if (dist < 20) {
-                    this.hoveredNeuron = neuron;
-                    break;
-                }
-            }
-            
-            this.draw();
+            this.handleInteraction(x, y);
         });
+        
+        // Touch support for mobile
+        this.canvas.addEventListener('touchstart', (e) => {
+            const rect = this.canvas.getBoundingClientRect();
+            const touch = e.touches[0];
+            const x = touch.clientX - rect.left;
+            const y = touch.clientY - rect.top;
+            this.handleInteraction(x, y);
+        });
+        
+        this.canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            const rect = this.canvas.getBoundingClientRect();
+            const touch = e.touches[0];
+            const x = touch.clientX - rect.left;
+            const y = touch.clientY - rect.top;
+            this.handleInteraction(x, y);
+        }, { passive: false });
+    },
+    
+    handleInteraction(x, y) {
+        this.hoveredNeuron = null;
+        for (const neuron of this.neurons) {
+            const dist = Math.sqrt((x - neuron.x) ** 2 + (y - neuron.y) ** 2);
+            if (dist < 20) {
+                this.hoveredNeuron = neuron;
+                break;
+            }
+        }
+        this.draw();
     },
     
     resize() {
