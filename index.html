@@ -207,22 +207,58 @@
                 \[a = \sigma(z)\]
             </div>
 
-            <p>Where:</p>
-            <ul style="margin-left: 2rem; margin-bottom: 1.5rem; color: var(--text-secondary);">
-                <li>\(\mathbf{x}\) is the input vector</li>
-                <li>\(\mathbf{w}\) is the weight vector</li>
-                <li>\(b\) is the bias term</li>
-                <li>\(z\) is the pre-activation (weighted sum)</li>
-                <li>\(\sigma\) is the activation function</li>
-                <li>\(a\) is the activation (output)</li>
-            </ul>
+            <div class="math-block">
+                <span class="math-label">Formula Breakdown — Single Neuron</span>
+                
+                <p style="color: var(--accent-cyan); margin-bottom: 0.5rem;"><strong>\(z\)</strong> — Pre-activation (weighted sum)</p>
+                <ul style="color: var(--text-secondary); margin-left: 1.5rem; margin-bottom: 1rem;">
+                    <li>The raw output before applying the activation function</li>
+                    <li>Example: if \(\mathbf{x} = [0.5, 0.3]\), \(\mathbf{w} = [0.4, 0.6]\), \(b = 0.1\)</li>
+                    <li>Then \(z = (0.4 \times 0.5) + (0.6 \times 0.3) + 0.1 = 0.2 + 0.18 + 0.1 = 0.48\)</li>
+                </ul>
+                
+                <p style="color: var(--accent-cyan); margin-bottom: 0.5rem;"><strong>\(\sigma(z)\)</strong> — Activation function</p>
+                <ul style="color: var(--text-secondary); margin-left: 1.5rem; margin-bottom: 1rem;">
+                    <li>Introduces non-linearity (otherwise the network is just linear!)</li>
+                    <li>Squashes values to a specific range (e.g., sigmoid: 0 to 1)</li>
+                </ul>
+                
+                <p style="color: var(--accent-cyan); margin-bottom: 0.5rem;"><strong>\(a\)</strong> — Activation (output)</p>
+                <ul style="color: var(--text-secondary); margin-left: 1.5rem;">
+                    <li>The final output of the neuron after activation</li>
+                    <li>This becomes the input to neurons in the next layer</li>
+                </ul>
+            </div>
 
             <h3>Layer-wise Computation</h3>
+
+            <p>
+                For efficiency, we compute all neurons in a layer at once using matrix operations:
+            </p>
 
             <div class="math-block highlight">
                 <span class="math-label">Layer Computation</span>
                 \[\mathbf{z}^{[l]} = \mathbf{W}^{[l]} \mathbf{a}^{[l-1]} + \mathbf{b}^{[l]}\]
                 \[\mathbf{a}^{[l]} = \sigma(\mathbf{z}^{[l]})\]
+            </div>
+
+            <div class="math-block">
+                <span class="math-label">Formula Breakdown — Matrix Dimensions</span>
+                
+                <p style="color: var(--text-secondary); margin-bottom: 1rem;">For layer \(l\) with \(n^{[l]}\) neurons receiving input from layer \(l-1\) with \(n^{[l-1]}\) neurons:</p>
+                
+                <p style="color: var(--accent-gold); margin-bottom: 0.5rem;"><strong>\(\mathbf{W}^{[l]}\)</strong> — Weight matrix: \(n^{[l]} \times n^{[l-1]}\)</p>
+                <ul style="color: var(--text-secondary); margin-left: 1.5rem; margin-bottom: 1rem;">
+                    <li>Row \(i\): weights for neuron \(i\) in this layer</li>
+                    <li>Column \(j\): weights connecting from neuron \(j\) in previous layer</li>
+                    <li>\(W_{ij}^{[l]}\): weight from neuron \(j\) in layer \(l-1\) to neuron \(i\) in layer \(l\)</li>
+                </ul>
+                
+                <p style="color: var(--accent-gold); margin-bottom: 0.5rem;"><strong>\(\mathbf{a}^{[l-1]}\)</strong> — Input from previous layer: \(n^{[l-1]} \times 1\)</p>
+                
+                <p style="color: var(--accent-gold); margin-bottom: 0.5rem;"><strong>\(\mathbf{b}^{[l]}\)</strong> — Bias vector: \(n^{[l]} \times 1\)</p>
+                
+                <p style="color: var(--accent-gold); margin-bottom: 0.5rem;"><strong>\(\mathbf{z}^{[l]}, \mathbf{a}^{[l]}\)</strong> — Output vectors: \(n^{[l]} \times 1\)</p>
             </div>
 
             <h3>Activation Functions</h3>
@@ -351,57 +387,199 @@
             </div>
 
             <p>
-                Now we combine everything: forward propagation, loss functions, and the chain rule to derive backpropagation.
+                Now we combine everything: forward propagation, loss functions, and the chain rule to derive backpropagation—the elegant algorithm that makes training deep networks possible.
             </p>
 
-            <h3>The Key Quantity: δ (Delta)</h3>
+            <h3>The Key Quantity: δ (Delta) — The Error Signal</h3>
+
+            <p>
+                The <strong>delta (δ)</strong> is the most important concept in backpropagation. It represents the <em>error signal</em> at each layer—specifically, how much the total loss would change if we slightly changed the pre-activation value at that layer.
+            </p>
+
+            <div class="definition">
+                <div class="definition-title">Definition: Delta (δ) — The Error Term</div>
+                <p style="margin-bottom: 0;">
+                    For layer \(l\), the delta is defined as the partial derivative of the loss with respect to the pre-activation:
+                </p>
+            </div>
 
             <div class="math-block highlight">
                 <span class="math-label">Error Term Definition</span>
                 \[\boldsymbol{\delta}^{[l]} = \frac{\partial \mathcal{L}}{\partial \mathbf{z}^{[l]}}\]
             </div>
 
-            <p>Once we have \(\boldsymbol{\delta}^{[l]}\), we can compute the gradients:</p>
+            <h4>🔍 Breaking Down Delta — What Each Part Means</h4>
 
             <div class="math-block">
-                <span class="math-label">Gradient Formulas</span>
-                \[\frac{\partial \mathcal{L}}{\partial \mathbf{W}^{[l]}} = \boldsymbol{\delta}^{[l]} (\mathbf{a}^{[l-1]})^T\]
-                \[\frac{\partial \mathcal{L}}{\partial \mathbf{b}^{[l]}} = \boldsymbol{\delta}^{[l]}\]
+                <span class="math-label">Formula Breakdown</span>
+                <p style="color: var(--text-secondary); margin-bottom: 1rem;">Let's dissect the delta formula piece by piece:</p>
+                
+                <p style="color: var(--accent-cyan); margin-bottom: 0.5rem;"><strong>\(\boldsymbol{\delta}^{[l]}\)</strong> — The error signal vector at layer \(l\)</p>
+                <ul style="color: var(--text-secondary); margin-left: 1.5rem; margin-bottom: 1rem;">
+                    <li>This is a vector with one value per neuron in layer \(l\)</li>
+                    <li>Each element tells us: "How much would the loss change if this neuron's pre-activation changed?"</li>
+                </ul>
+                
+                <p style="color: var(--accent-cyan); margin-bottom: 0.5rem;"><strong>\(\frac{\partial \mathcal{L}}{\partial \mathbf{z}^{[l]}}\)</strong> — Partial derivative of loss w.r.t. pre-activation</p>
+                <ul style="color: var(--text-secondary); margin-left: 1.5rem; margin-bottom: 1rem;">
+                    <li>\(\mathcal{L}\) is the scalar loss value (e.g., 0.5 for MSE)</li>
+                    <li>\(\mathbf{z}^{[l]}\) is the weighted sum <em>before</em> activation: \(\mathbf{z}^{[l]} = \mathbf{W}^{[l]}\mathbf{a}^{[l-1]} + \mathbf{b}^{[l]}\)</li>
+                    <li>This derivative captures the sensitivity of loss to changes in \(\mathbf{z}\)</li>
+                </ul>
             </div>
 
-            <h3>The Backpropagation Equations</h3>
+            <div class="insight">
+                <div class="insight-icon">💡</div>
+                <div class="insight-title">Why Delta at z (not a)?</div>
+                <p style="margin-bottom: 0;">
+                    We define delta at \(\mathbf{z}\) (pre-activation) rather than \(\mathbf{a}\) (post-activation) because weights directly affect \(\mathbf{z}\). This makes computing weight gradients simpler: \(\frac{\partial \mathcal{L}}{\partial \mathbf{W}} = \boldsymbol{\delta} \cdot \mathbf{a}^T\). If we used \(\mathbf{a}\), we'd need an extra chain rule step every time.
+                </p>
+            </div>
 
-            <h4>Step 1: Output Layer Error</h4>
+            <h4>🎯 Why Delta Matters — The Bridge to Gradients</h4>
+
+            <p>
+                Once we have \(\boldsymbol{\delta}^{[l]}\), computing the gradients we need for learning becomes trivial:
+            </p>
 
             <div class="math-block">
-                <span class="math-label">Output Error</span>
+                <span class="math-label">From Delta to Gradients</span>
+                
+                <p style="color: var(--accent-gold); margin-bottom: 0.5rem;"><strong>Weight Gradient:</strong></p>
+                \[\frac{\partial \mathcal{L}}{\partial \mathbf{W}^{[l]}} = \boldsymbol{\delta}^{[l]} (\mathbf{a}^{[l-1]})^T\]
+                <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1rem;">
+                    ↳ "Error at this layer" × "Input to this layer" = "How to adjust weights"
+                </p>
+                
+                <p style="color: var(--accent-gold); margin-bottom: 0.5rem;"><strong>Bias Gradient:</strong></p>
+                \[\frac{\partial \mathcal{L}}{\partial \mathbf{b}^{[l]}} = \boldsymbol{\delta}^{[l]}\]
+                <p style="color: var(--text-secondary); font-size: 0.9rem;">
+                    ↳ The bias gradient is simply delta itself (since \(\frac{\partial z}{\partial b} = 1\))
+                </p>
+            </div>
+
+            <h3>The Backpropagation Equations — Step by Step</h3>
+
+            <h4>Step 1: Output Layer Error (δ at layer L)</h4>
+
+            <p>
+                At the output layer, we can compute delta directly from the loss function:
+            </p>
+
+            <div class="math-block">
+                <span class="math-label">Output Layer Delta</span>
                 \[\boldsymbol{\delta}^{[L]} = \frac{\partial \mathcal{L}}{\partial \mathbf{a}^{[L]}} \odot \sigma'(\mathbf{z}^{[L]})\]
             </div>
 
-            <h4>Step 2: Propagate Error Backward</h4>
+            <div class="math-block">
+                <span class="math-label">Formula Breakdown — Output Delta</span>
+                
+                <p style="color: var(--accent-cyan); margin-bottom: 0.5rem;"><strong>\(\frac{\partial \mathcal{L}}{\partial \mathbf{a}^{[L]}}\)</strong> — How loss changes with output activation</p>
+                <ul style="color: var(--text-secondary); margin-left: 1.5rem; margin-bottom: 1rem;">
+                    <li>For MSE loss \(\mathcal{L} = \frac{1}{2}(y - \hat{y})^2\): this equals \((\hat{y} - y)\)</li>
+                    <li>For Cross-Entropy: this equals \(-\frac{y}{\hat{y}} + \frac{1-y}{1-\hat{y}}\)</li>
+                </ul>
+                
+                <p style="color: var(--accent-cyan); margin-bottom: 0.5rem;"><strong>\(\sigma'(\mathbf{z}^{[L]})\)</strong> — Derivative of activation function</p>
+                <ul style="color: var(--text-secondary); margin-left: 1.5rem; margin-bottom: 1rem;">
+                    <li>For Sigmoid: \(\sigma'(z) = \sigma(z)(1 - \sigma(z)) = a(1-a)\)</li>
+                    <li>For ReLU: \(\sigma'(z) = 1\) if \(z > 0\), else \(0\)</li>
+                </ul>
+                
+                <p style="color: var(--accent-cyan); margin-bottom: 0.5rem;"><strong>\(\odot\)</strong> — Element-wise (Hadamard) product</p>
+                <ul style="color: var(--text-secondary); margin-left: 1.5rem;">
+                    <li>Multiplies corresponding elements: \([a,b] \odot [c,d] = [ac, bd]\)</li>
+                    <li>Each neuron's error is scaled by its activation's sensitivity</li>
+                </ul>
+            </div>
+
+            <h4>Step 2: Propagate Error Backward (δ for hidden layers)</h4>
+
+            <p>
+                This is where the "back" in backpropagation happens. We propagate the error signal from layer \(l+1\) back to layer \(l\):
+            </p>
 
             <div class="math-block highlight">
-                <span class="math-label">Error Propagation</span>
+                <span class="math-label">Error Propagation Equation</span>
                 \[\boldsymbol{\delta}^{[l]} = \left( (\mathbf{W}^{[l+1]})^T \boldsymbol{\delta}^{[l+1]} \right) \odot \sigma'(\mathbf{z}^{[l]})\]
+            </div>
+
+            <div class="math-block">
+                <span class="math-label">Formula Breakdown — Error Propagation</span>
+                
+                <p style="color: var(--accent-magenta); margin-bottom: 0.5rem;"><strong>\((\mathbf{W}^{[l+1]})^T\)</strong> — Transposed weight matrix</p>
+                <ul style="color: var(--text-secondary); margin-left: 1.5rem; margin-bottom: 1rem;">
+                    <li>The transpose "reverses" the forward connections</li>
+                    <li>In forward pass: layer \(l\) → layer \(l+1\) via \(\mathbf{W}^{[l+1]}\)</li>
+                    <li>In backward pass: layer \(l+1\) → layer \(l\) via \((\mathbf{W}^{[l+1]})^T\)</li>
+                </ul>
+                
+                <p style="color: var(--accent-magenta); margin-bottom: 0.5rem;"><strong>\((\mathbf{W}^{[l+1]})^T \boldsymbol{\delta}^{[l+1]}\)</strong> — Weighted error distribution</p>
+                <ul style="color: var(--text-secondary); margin-left: 1.5rem; margin-bottom: 1rem;">
+                    <li>Each neuron in layer \(l\) contributed to multiple neurons in layer \(l+1\)</li>
+                    <li>This term sums up all error contributions, weighted by connection strength</li>
+                    <li>Strong weights → more blame assigned to that neuron</li>
+                </ul>
+                
+                <p style="color: var(--accent-magenta); margin-bottom: 0.5rem;"><strong>\(\odot \sigma'(\mathbf{z}^{[l]})\)</strong> — Local gradient scaling</p>
+                <ul style="color: var(--text-secondary); margin-left: 1.5rem;">
+                    <li>Scales the propagated error by the local activation sensitivity</li>
+                    <li>If activation was saturated (\(\sigma' \approx 0\)), gradient vanishes</li>
+                    <li>This is why ReLU helps: \(\sigma'(z) = 1\) for positive inputs</li>
+                </ul>
             </div>
 
             <div class="insight">
                 <div class="insight-icon">🎯</div>
-                <div class="insight-title">Intuition Behind Error Propagation</div>
+                <div class="insight-title">The Beautiful Intuition</div>
                 <p style="margin-bottom: 0;">
-                    The term \((\mathbf{W}^{[l+1]})^T \boldsymbol{\delta}^{[l+1]}\) distributes the error from layer \(l+1\) back to layer \(l\). The term \(\sigma'(\mathbf{z}^{[l]})\) scales by how sensitive the activation is.
+                    Think of delta as "blame assignment." The output layer knows the final error. It passes blame backward through the network: "You contributed this much weight to my input, so you get this much blame." Each layer receives blame proportional to its contribution, scaled by how much it could have changed things (the activation derivative).
                 </p>
             </div>
 
             <h3>Complete Algorithm Summary</h3>
 
             <ol class="steps">
-                <li><strong>Forward Pass:</strong> Compute all \(\mathbf{z}^{[l]}\) and \(\mathbf{a}^{[l]}\)</li>
+                <li><strong>Forward Pass:</strong> Compute all \(\mathbf{z}^{[l]} = \mathbf{W}^{[l]}\mathbf{a}^{[l-1]} + \mathbf{b}^{[l]}\) and \(\mathbf{a}^{[l]} = \sigma(\mathbf{z}^{[l]})\)</li>
                 <li><strong>Output Error:</strong> Compute \(\boldsymbol{\delta}^{[L]} = \nabla_{\mathbf{a}^{[L]}} \mathcal{L} \odot \sigma'(\mathbf{z}^{[L]})\)</li>
-                <li><strong>Backpropagate:</strong> For \(l = L-1, \ldots, 1\): compute \(\boldsymbol{\delta}^{[l]}\)</li>
-                <li><strong>Compute Gradients:</strong> \(\nabla_{\mathbf{W}^{[l]}} \mathcal{L}\), \(\nabla_{\mathbf{b}^{[l]}} \mathcal{L}\)</li>
+                <li><strong>Backpropagate:</strong> For \(l = L-1, \ldots, 1\): compute \(\boldsymbol{\delta}^{[l]} = ((\mathbf{W}^{[l+1]})^T \boldsymbol{\delta}^{[l+1]}) \odot \sigma'(\mathbf{z}^{[l]})\)</li>
+                <li><strong>Compute Gradients:</strong> \(\nabla_{\mathbf{W}^{[l]}} \mathcal{L} = \boldsymbol{\delta}^{[l]} (\mathbf{a}^{[l-1]})^T\) and \(\nabla_{\mathbf{b}^{[l]}} \mathcal{L} = \boldsymbol{\delta}^{[l]}\)</li>
                 <li><strong>Update Weights:</strong> \(\mathbf{W}^{[l]} \leftarrow \mathbf{W}^{[l]} - \eta \nabla_{\mathbf{W}^{[l]}} \mathcal{L}\)</li>
             </ol>
+
+            <!-- Collapsible: Derivation from Chain Rule -->
+            <div class="collapsible">
+                <div class="collapsible-header" tabindex="0" role="button" aria-expanded="false">
+                    <div class="collapsible-title">
+                        <span>📐</span> Full Derivation: Why Does the Delta Formula Work?
+                    </div>
+                    <svg class="collapsible-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M6 9l6 6 6-6"/>
+                    </svg>
+                </div>
+                <div class="collapsible-content">
+                    <div class="collapsible-inner">
+                        <p>Let's derive the backpropagation equation using the chain rule:</p>
+                        
+                        <div class="math-block">
+                            <span class="math-label">Derivation</span>
+                            <p style="color: var(--text-secondary);">We want \(\frac{\partial \mathcal{L}}{\partial z_j^{[l]}}\) for neuron \(j\) in layer \(l\).</p>
+                            
+                            <p style="color: var(--text-secondary); margin-top: 1rem;">The pre-activation \(z_j^{[l]}\) affects the loss through all neurons in layer \(l+1\):</p>
+                            \[\frac{\partial \mathcal{L}}{\partial z_j^{[l]}} = \sum_k \frac{\partial \mathcal{L}}{\partial z_k^{[l+1]}} \cdot \frac{\partial z_k^{[l+1]}}{\partial z_j^{[l]}}\]
+                            
+                            <p style="color: var(--text-secondary); margin-top: 1rem;">Now, \(z_k^{[l+1]} = \sum_j W_{kj}^{[l+1]} a_j^{[l]} + b_k^{[l+1]}\) and \(a_j^{[l]} = \sigma(z_j^{[l]})\), so:</p>
+                            \[\frac{\partial z_k^{[l+1]}}{\partial z_j^{[l]}} = W_{kj}^{[l+1]} \cdot \sigma'(z_j^{[l]})\]
+                            
+                            <p style="color: var(--text-secondary); margin-top: 1rem;">Substituting back:</p>
+                            \[\delta_j^{[l]} = \sum_k \delta_k^{[l+1]} \cdot W_{kj}^{[l+1]} \cdot \sigma'(z_j^{[l]})\]
+                            
+                            <p style="color: var(--text-secondary); margin-top: 1rem;">In matrix form (pulling out the common \(\sigma'\) term):</p>
+                            \[\boldsymbol{\delta}^{[l]} = \left( (\mathbf{W}^{[l+1]})^T \boldsymbol{\delta}^{[l+1]} \right) \odot \sigma'(\mathbf{z}^{[l]})\]
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             <!-- Quiz 2 -->
             <div class="quiz-container" id="quiz-backprop-container"></div>
@@ -417,51 +595,128 @@
             </div>
 
             <p>
-                Let's work through a complete example with a simple 2-layer network.
+                Let's work through a complete example with a simple 2-layer network. We'll compute every value step by step so you can see exactly how backpropagation works.
             </p>
 
             <h3>Network Setup</h3>
 
             <p>
                 <strong>Architecture:</strong> 2 inputs → 2 hidden neurons → 1 output<br>
-                <strong>Activation:</strong> Sigmoid<br>
-                <strong>Loss:</strong> Mean Squared Error
+                <strong>Activation:</strong> Sigmoid \(\sigma(z) = \frac{1}{1+e^{-z}}\)<br>
+                <strong>Loss:</strong> Mean Squared Error \(\mathcal{L} = \frac{1}{2}(y - \hat{y})^2\)
             </p>
 
             <div class="math-block">
                 <span class="math-label">Initial Values</span>
                 <p style="color: var(--text-secondary);">Input: \(\mathbf{x} = [0.5, 0.3]^T\), Target: \(y = 1\)</p>
                 
-                <p style="color: var(--text-secondary); margin-top: 1rem;">Layer 1:</p>
+                <p style="color: var(--text-secondary); margin-top: 1rem;">Layer 1 weights and biases:</p>
                 \[\mathbf{W}^{[1]} = \begin{bmatrix} 0.1 & 0.2 \\ 0.3 & 0.4 \end{bmatrix}, \quad \mathbf{b}^{[1]} = \begin{bmatrix} 0.1 \\ 0.1 \end{bmatrix}\]
                 
-                <p style="color: var(--text-secondary); margin-top: 1rem;">Layer 2:</p>
+                <p style="color: var(--text-secondary); margin-top: 1rem;">Layer 2 weights and bias:</p>
                 \[\mathbf{W}^{[2]} = \begin{bmatrix} 0.5 & 0.6 \end{bmatrix}, \quad b^{[2]} = 0.1\]
             </div>
 
-            <h3>Forward Pass</h3>
+            <h3>Forward Pass — Computing Activations</h3>
+
+            <h4>Hidden Layer (Layer 1)</h4>
 
             <div class="math-block">
-                <span class="math-label">Hidden Layer</span>
-                \[\mathbf{z}^{[1]} = \begin{bmatrix} 0.21 \\ 0.37 \end{bmatrix}, \quad \mathbf{a}^{[1]} = \begin{bmatrix} 0.5523 \\ 0.5914 \end{bmatrix}\]
+                <span class="math-label">Step-by-Step: z¹ Calculation</span>
+                <p style="color: var(--text-secondary);">Apply: \(\mathbf{z}^{[1]} = \mathbf{W}^{[1]} \mathbf{x} + \mathbf{b}^{[1]}\)</p>
+                
+                \[z_1^{[1]} = (0.1 \times 0.5) + (0.2 \times 0.3) + 0.1 = 0.05 + 0.06 + 0.1 = \mathbf{0.21}\]
+                \[z_2^{[1]} = (0.3 \times 0.5) + (0.4 \times 0.3) + 0.1 = 0.15 + 0.12 + 0.1 = \mathbf{0.37}\]
             </div>
 
             <div class="math-block">
-                <span class="math-label">Output Layer</span>
-                \[z^{[2]} = 0.631, \quad \hat{y} = 0.6526\]
-                \[\mathcal{L} = \frac{1}{2}(1 - 0.6526)^2 = 0.0604\]
+                <span class="math-label">Step-by-Step: a¹ Calculation (Sigmoid)</span>
+                <p style="color: var(--text-secondary);">Apply: \(\mathbf{a}^{[1]} = \sigma(\mathbf{z}^{[1]})\)</p>
+                
+                \[a_1^{[1]} = \sigma(0.21) = \frac{1}{1 + e^{-0.21}} = \frac{1}{1.8106} = \mathbf{0.5523}\]
+                \[a_2^{[1]} = \sigma(0.37) = \frac{1}{1 + e^{-0.37}} = \frac{1}{1.6907} = \mathbf{0.5914}\]
             </div>
 
-            <h3>Backward Pass</h3>
+            <h4>Output Layer (Layer 2)</h4>
 
-            <div class="math-block highlight">
-                <span class="math-label">δ² Computation</span>
-                \[\delta^{[2]} = -(1 - 0.6526) \cdot 0.2267 = -0.0788\]
+            <div class="math-block">
+                <span class="math-label">Step-by-Step: z² and ŷ Calculation</span>
+                <p style="color: var(--text-secondary);">Apply: \(z^{[2]} = \mathbf{W}^{[2]} \mathbf{a}^{[1]} + b^{[2]}\)</p>
+                
+                \[z^{[2]} = (0.5 \times 0.5523) + (0.6 \times 0.5914) + 0.1\]
+                \[= 0.2762 + 0.3548 + 0.1 = \mathbf{0.631}\]
+                
+                <p style="color: var(--text-secondary); margin-top: 1rem;">Apply sigmoid to get prediction:</p>
+                \[\hat{y} = \sigma(0.631) = \frac{1}{1 + e^{-0.631}} = \mathbf{0.6526}\]
             </div>
 
+            <div class="math-block">
+                <span class="math-label">Loss Calculation</span>
+                \[\mathcal{L} = \frac{1}{2}(y - \hat{y})^2 = \frac{1}{2}(1 - 0.6526)^2 = \frac{1}{2}(0.3474)^2 = \mathbf{0.0604}\]
+            </div>
+
+            <h3>Backward Pass — Computing Deltas & Gradients</h3>
+
+            <h4>Output Layer Delta (δ²)</h4>
+
             <div class="math-block highlight">
-                <span class="math-label">δ¹ Computation</span>
-                \[\boldsymbol{\delta}^{[1]} = \begin{bmatrix} -0.0097 \\ -0.0114 \end{bmatrix}\]
+                <span class="math-label">Step-by-Step: δ² Computation</span>
+                <p style="color: var(--text-secondary);">Formula: \(\delta^{[2]} = \frac{\partial \mathcal{L}}{\partial a^{[2]}} \cdot \sigma'(z^{[2]})\)</p>
+                
+                <p style="color: var(--accent-cyan); margin-top: 1rem;"><strong>Part 1: Loss derivative w.r.t. output</strong></p>
+                \[\frac{\partial \mathcal{L}}{\partial a^{[2]}} = \frac{\partial}{\partial \hat{y}}\left[\frac{1}{2}(y-\hat{y})^2\right] = -(y - \hat{y}) = -(1 - 0.6526) = \mathbf{-0.3474}\]
+                
+                <p style="color: var(--accent-cyan); margin-top: 1rem;"><strong>Part 2: Sigmoid derivative</strong></p>
+                \[\sigma'(z^{[2]}) = \sigma(z^{[2]})(1 - \sigma(z^{[2]})) = 0.6526 \times (1 - 0.6526) = 0.6526 \times 0.3474 = \mathbf{0.2267}\]
+                
+                <p style="color: var(--accent-gold); margin-top: 1rem;"><strong>Final: Multiply together</strong></p>
+                \[\delta^{[2]} = (-0.3474) \times 0.2267 = \mathbf{-0.0788}\]
+            </div>
+
+            <h4>Hidden Layer Delta (δ¹)</h4>
+
+            <div class="math-block highlight">
+                <span class="math-label">Step-by-Step: δ¹ Computation</span>
+                <p style="color: var(--text-secondary);">Formula: \(\boldsymbol{\delta}^{[1]} = ((\mathbf{W}^{[2]})^T \delta^{[2]}) \odot \sigma'(\mathbf{z}^{[1]})\)</p>
+                
+                <p style="color: var(--accent-magenta); margin-top: 1rem;"><strong>Part 1: Propagate error backward</strong></p>
+                \[(\mathbf{W}^{[2]})^T \delta^{[2]} = \begin{bmatrix} 0.5 \\ 0.6 \end{bmatrix} \times (-0.0788) = \begin{bmatrix} -0.0394 \\ -0.0473 \end{bmatrix}\]
+                
+                <p style="color: var(--accent-magenta); margin-top: 1rem;"><strong>Part 2: Compute sigmoid derivatives for each hidden neuron</strong></p>
+                \[\sigma'(z_1^{[1]}) = a_1^{[1]}(1-a_1^{[1]}) = 0.5523 \times 0.4477 = \mathbf{0.2472}\]
+                \[\sigma'(z_2^{[1]}) = a_2^{[1]}(1-a_2^{[1]}) = 0.5914 \times 0.4086 = \mathbf{0.2417}\]
+                
+                <p style="color: var(--accent-gold); margin-top: 1rem;"><strong>Final: Element-wise multiply</strong></p>
+                \[\boldsymbol{\delta}^{[1]} = \begin{bmatrix} -0.0394 \\ -0.0473 \end{bmatrix} \odot \begin{bmatrix} 0.2472 \\ 0.2417 \end{bmatrix} = \begin{bmatrix} \mathbf{-0.0097} \\ \mathbf{-0.0114} \end{bmatrix}\]
+            </div>
+
+            <h4>Computing Weight Gradients</h4>
+
+            <div class="math-block">
+                <span class="math-label">Layer 2 Gradients</span>
+                <p style="color: var(--text-secondary);">Formula: \(\frac{\partial \mathcal{L}}{\partial \mathbf{W}^{[2]}} = \delta^{[2]} (\mathbf{a}^{[1]})^T\)</p>
+                
+                \[\frac{\partial \mathcal{L}}{\partial \mathbf{W}^{[2]}} = -0.0788 \times [0.5523, 0.5914] = [\mathbf{-0.0435}, \mathbf{-0.0466}]\]
+                \[\frac{\partial \mathcal{L}}{\partial b^{[2]}} = \delta^{[2]} = \mathbf{-0.0788}\]
+            </div>
+
+            <div class="math-block">
+                <span class="math-label">Layer 1 Gradients</span>
+                <p style="color: var(--text-secondary);">Formula: \(\frac{\partial \mathcal{L}}{\partial \mathbf{W}^{[1]}} = \boldsymbol{\delta}^{[1]} \mathbf{x}^T\)</p>
+                
+                \[\frac{\partial \mathcal{L}}{\partial \mathbf{W}^{[1]}} = \begin{bmatrix} -0.0097 \\ -0.0114 \end{bmatrix} \times [0.5, 0.3] = \begin{bmatrix} -0.0049 & -0.0029 \\ -0.0057 & -0.0034 \end{bmatrix}\]
+            </div>
+
+            <h4>Weight Update (with η = 0.5)</h4>
+
+            <div class="math-block">
+                <span class="math-label">Updated Weights</span>
+                <p style="color: var(--text-secondary);">Formula: \(\mathbf{W}_{new} = \mathbf{W}_{old} - \eta \cdot \nabla \mathcal{L}\)</p>
+                
+                \[W^{[2]}_{0,new} = 0.5 - 0.5 \times (-0.0435) = 0.5 + 0.0218 = \mathbf{0.5218}\]
+                \[W^{[2]}_{1,new} = 0.6 - 0.5 \times (-0.0466) = 0.6 + 0.0233 = \mathbf{0.6233}\]
+                
+                <p style="color: var(--accent-green); margin-top: 1rem;">Notice: gradients are negative (loss decreasing direction), so weights increase to get output closer to target of 1.</p>
             </div>
 
             <!-- Interactive Calculator -->
